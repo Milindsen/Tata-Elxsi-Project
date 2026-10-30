@@ -24,14 +24,13 @@ The adapter is a separate opt-in integration. It requires Linux, `tc`, explicit 
 
 ## Vercel deployment
 
-Vercel can host the React dashboard, but it cannot host this complete backend as a Vercel Function: the simulator relies on a persistent process and WebSocket telemetry, and experiment history uses local SQLite. Deploy the frontend to Vercel and run `backend/` on an always-on Python host that supports FastAPI and WebSockets. The hosted LAN discovery endpoints intentionally report that local scanning is unavailable; a server cannot inspect a visitor's Wi-Fi adapter. QoS `tc` enforcement also requires a separately controlled Linux gateway and is not available from a Vercel deployment.
+This repository deploys the Vite dashboard and FastAPI API together as Vercel Services. The repository-root `vercel.json` defines both services and routes `/api`, `/api/*`, and `/ws/*` to the backend; all other paths go to the dashboard. The frontend and backend share the Vercel origin, so no API URL or service binding variables are needed.
 
-1. Import this repository into Vercel with the project root set to `wifiroutermodulation-main` (the folder containing `package.json`). Vercel uses `vercel.json` to build the Vite app and serve SPA routes.
-2. Deploy `backend/` to an always-on Python service with a persistent disk. Start it with `python -m uvicorn qos.main:app --app-dir backend --host 0.0.0.0 --port $PORT`. Set `QOS_DB_PATH` to a file on that disk if experiment history must survive restarts.
-3. In Vercel project settings, set `VITE_API_URL` to the backend's HTTPS origin (no trailing slash), and `VITE_WS_URL` to its WebSocket URL, for example `wss://your-backend.example.com/ws/telemetry`. Set `QOS_ALLOWED_ORIGINS` on the backend to the Vercel site's exact origin, such as `https://your-project.vercel.app` (comma-separated origins are supported for preview and production URLs).
-4. Redeploy the Vercel frontend after setting the variables. Confirm the backend `/api/health` responds and the dashboard shows live telemetry.
+1. Push the repository with the root `vercel.json` to GitHub. In Vercel, import the repository root (`.`), not just `wifiroutermodulation-main/`, and select the **Services** framework for the project.
+2. Deploy. Vercel builds `wifiroutermodulation-main` as the Vite service and `wifiroutermodulation-main/backend` as the FastAPI service in one deployment.
+3. Verify `/api/health` and the dashboard's live telemetry. The frontend uses same-origin `/api` and `/ws/telemetry` routes.
 
-Vercel preview deployments have distinct origins; add the needed preview origins to `QOS_ALLOWED_ORIGINS` or use a stable custom domain. A single-process backend is suitable for a demo; multiple instances would need shared simulation state and a shared database, neither of which this prototype currently implements.
+Vercel supports WebSockets in Functions, but this prototype keeps simulator state and SQLite history in the function process and filesystem. Those are not shared or durable across independent function instances and deployments, so this setup is suitable for a demo rather than reliable multi-user production. For durable experiment history and coordinated simulator state, move them to managed shared storage. Hosted Wi-Fi discovery and Linux `tc` enforcement remain unavailable from the public deployment.
 
 Tested with Python 3.11.6, Node.js 24.11.1, npm 11.6.2. Node dependencies are locked in `package-lock.json`; backend direct dependencies are pinned in `backend/requirements.txt`.
 

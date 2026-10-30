@@ -1,0 +1,20 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "services": {
+    "wifiroutermodulation-main": {
+      "root": "wifiroutermodulation-main",
+      "framework": "vite"
+    },
+    "backend": {
+      "root": "wifiroutermodulation-main/backend",
+      "framework": "fastapi",
+      "entrypoint": "main:app"
+    }
+  },
+  "rewrites": [
+    { "source": "/api", "destination": { "service": "backend" } },
+    { "source": "/api/(.*)", "destination": { "service": "backend" } },
+    { "source": "/ws/(.*)", "destination": { "service": "backend" } },
+    { "source": "/(.*)", "destination": { "service": "wifiroutermodulation-main" } }
+  ]
+}
