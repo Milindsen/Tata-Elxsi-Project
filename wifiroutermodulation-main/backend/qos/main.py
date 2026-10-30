@@ -13,7 +13,7 @@ from .enforcement import LinuxTcAdapter
 from .lan_discovery import scan_local_wifi, wifi_adapter_traffic
 
 ROOT = Path(__file__).resolve().parent.parent
-DB_PATH = Path(os.environ.get("QOS_DB_PATH", ROOT / "qos_history.sqlite3"))
+DB_PATH = Path(os.environ.get("QOS_DB_PATH") or ("/tmp/qos_history.sqlite3" if os.environ.get("VERCEL") else ROOT / "qos_history.sqlite3"))
 sim = Simulator()
 tc = LinuxTcAdapter()
 clients: set[WebSocket] = set()
